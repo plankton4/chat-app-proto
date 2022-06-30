@@ -1,0 +1,256 @@
+syntax = "proto3";
+package PBCommon;
+
+option go_package = "/pb";
+
+message PBMessage {
+  uint32 RowID = 1;
+  optional uint32 ErrID = 2;
+  optional string ErrStr = 3;
+
+  oneof InternalMessage {
+    // Auth
+    AuthenticationReq MessAuthReq = 20;
+    AuthenticationAnswer MessAuthAnswer = 21;
+
+    // User data
+    GetUserDataReq MessGetUserDataReq = 50;
+    GetUserDataAnswer MessGetUserDataAnswer = 51;
+    GetMasterUserDataReq MessGetMasterUserDataReq = 52;
+    GetMasterUserDataResp MessGetMasterUserDataResp = 53;
+
+    // Messages
+    SendChatMessageReq MessSendChatMessageReq = 100;
+    EditChatMessageReq MessEditChatMessageReq = 101;
+    NewChatMessageEvent MessNewChatMessageEvent = 102;
+    ChatMessageChangedEvent MessChatMessageChangedEvent = 103;
+    DeleteChatMessageReq MessDeleteChatMessageReq = 104;
+    ChatMessageDeletedEvent MessChatMessageDeletedEvent = 105;
+
+    GetAllChatMessagesReq MessGetAllChatMessagesReq = 200;
+    GetAllChatMessagesAnswer MessGetAllChatMessagesAnswer = 201;
+
+    // Push
+    SubscribeToPushReq MessSubscribeToPushReq = 250;
+
+    // Chats
+    GetChatListReq MessGetChatListReq = 300;
+    GetChatListResp MessGetChatListResp = 301;
+    GetUnreadInfoReq MessGetUnreadInfoReq = 302;
+    GetUnreadInfoResp MessGetUnreadInfoResp = 303;
+
+    // Other events
+    ReturnedMessageEvent MessReturnedMessageEvent = 1999;
+    
+    StandartAnswer MessStandartAnswer = 2000;
+  }
+}
+
+/*===========================================================================
+ENUMS
+=============================================================================*/
+enum Gender {
+  UnknownGender = 0;
+  Male = 1;
+  Female = 2;
+  Other = 3;
+}
+
+enum ChatMessageType {
+  UnknownType = 0;
+  Text = 1;
+  Image = 2;
+  GIF = 3;
+}
+
+enum UserDataField {
+  FieldUserID = 0;
+  FieldName = 1;
+  FieldAge = 2;
+  FieldGender = 3;
+  FieldCityName = 4;
+}
+
+enum PrivateUserDataField {
+  // WORK
+  FieldPhoneNumber = 0; // заглушка чтоб прото собрать
+}
+
+enum ReturnReason {
+  AuthenticationNeeded = 0;
+}
+
+/*===========================================================================
+DATA
+=============================================================================*/
+message UserData {
+  uint32 UserID = 1;
+  optional string Name = 2;
+  optional uint32 Age = 3;
+  optional Gender Gender = 4;
+  optional string CityName = 5;
+}
+
+message PrivateUserData {
+  // TODO
+}
+
+message ChatMessageData {
+  string MessageID = 1;
+  ChatMessageType Type = 2;
+  uint32 FromUserID = 3;
+  optional uint32 Time = 4;
+  optional uint32 ToChatID = 5;
+  optional uint32 ToUserID = 6;
+  optional string Text = 7;
+  optional bool IsEdited = 8;
+  optional string ImageURL = 9;
+  optional float AspectRatio = 10;
+  optional ChatMessageData RepliedMessage = 11;
+}
+
+message ChatData {
+  uint32 ChatID = 1;
+  string Title = 2;
+  optional string IconURL = 3; 
+}
+
+message UnreadInfo {
+  optional uint32 UserID = 1;
+  optional uint32 ChatID = 2;
+  optional uint32 UnreadCount = 3;
+  optional string LastSeenMessageID = 4;
+}
+
+/*===========================================================================
+REQUEST
+=============================================================================*/
+message SendChatMessageReq {
+  ChatMessageType Type = 1;
+  uint32 FromUserID = 2;
+  optional uint32 ToChatID = 3; 
+  optional uint32 ToUserID = 4;
+  optional string Text = 5;
+  optional string ImageURL = 6;
+  optional float AspectRatio = 7;
+  optional ChatMessageData RepliedMessage = 8;
+}
+
+message EditChatMessageReq {
+  ChatMessageData OriginMessage = 1;
+  optional string NewText = 2;
+}
+
+message DeleteChatMessageReq {
+  string MessageID = 1;
+  uint32 FromUserID = 2;
+  optional uint32 ToChatID = 3;
+  optional uint32 ToUserID = 4;
+}
+
+message SubscribeToPushReq {
+  string Token = 1;
+}
+
+/*===========================================================================
+REQUEST WITH ANSWER
+=============================================================================*/
+// GetAllChatMessages
+message GetAllChatMessagesReq {
+  optional uint32 ChatID = 1;
+  optional uint32 UserID = 2;
+}
+
+message GetAllChatMessagesAnswer {
+  optional uint32 ChatID = 1;
+  optional uint32 UserID = 2;
+  repeated ChatMessageData messages = 3;
+}
+
+// GetChatList
+message GetChatListReq {
+  //
+}
+
+message GetChatListResp {
+ repeated ChatData chats = 1;
+}
+
+// Authentication
+message AuthenticationReq {
+  uint32 UserID = 1;
+  string SessionKey = 2;
+
+  // аутентификация во время запуска прила, а не разворачивания
+  bool IsFirstAuthentication = 3; 
+}
+
+message AuthenticationAnswer {
+  uint32 UserID = 1;
+  uint32 IsRegistration = 2;
+  string SessionKey = 3;
+}
+
+// GetUserData
+message GetUserDataReq {
+  repeated uint32 Users = 1;
+  repeated UserDataField Fields = 2;
+}
+
+message GetUserDataAnswer {
+  repeated UserData Data = 1;
+}
+
+message GetMasterUserDataReq {
+  repeated UserDataField Fields = 1;
+  repeated PrivateUserDataField PrivateFields = 2;
+}
+
+message GetMasterUserDataResp {
+  optional UserData Data = 1;
+  optional PrivateUserData PrivateData = 2;
+}
+
+// Unread messages
+message GetUnreadInfoReq {
+  repeated uint32 UserIDs = 1;
+  repeated uint32 ChatIDs = 2;
+}
+
+message GetUnreadInfoResp {
+  repeated UnreadInfo Info = 1;
+}
+
+/*===========================================================================
+ANSWER
+=============================================================================*/
+message StandartAnswer {
+  //
+}
+
+/*===========================================================================
+EVENTS
+=============================================================================*/
+message NewChatMessageEvent {
+  ChatMessageData chatMessage = 1;
+}
+
+message ChatMessageChangedEvent {
+  string MessageID = 1;
+  ChatMessageType Type = 2;
+  optional uint32 ToChatID = 3;
+  optional uint32 ToUserID = 4;
+  optional string NewText = 5;
+  optional bool IsEdited = 6;
+}
+
+message ChatMessageDeletedEvent {
+  string MessageID = 1;
+  optional uint32 ToChatID = 2;
+  optional uint32 ToUserID = 3;
+}
+
+message ReturnedMessageEvent {
+  ReturnReason ReasonOfReturn = 1;
+  PBMessage ReturnedMessage = 2;
+}
